@@ -1,6 +1,62 @@
 # Deployment Guide
 
-This Streamlit app can be deployed to multiple platforms. Choose the one that best fits your needs.
+This Streamlit app can be deployed to multiple platforms using GitHub Actions for CI/CD.
+
+## GitHub Actions (Automated CI/CD)
+
+This repository includes GitHub Actions workflows for continuous integration and deployment.
+
+### Workflows
+
+| Workflow | File | Trigger | Purpose |
+|----------|------|---------|---------|
+| CI | `.github/workflows/ci.yml` | Push/PR to main | Lint, test, build Docker |
+| Deploy | `.github/workflows/deploy.yml` | Push to main / Manual | Deploy to various platforms |
+
+### CI Workflow
+
+The CI workflow runs automatically on every push and pull request:
+- Lints code with flake8
+- Tests that all modules import correctly
+- Verifies Streamlit app can start
+- Builds Docker image (without pushing)
+
+### Deploy Workflow
+
+The deploy workflow supports multiple targets:
+
+#### Automatic (on push to main)
+- Builds and pushes Docker image to GitHub Container Registry (ghcr.io)
+
+#### Manual Deployment (workflow_dispatch)
+Go to **Actions** → **Deploy** → **Run workflow** and select a target:
+- `docker` - Push to GitHub Container Registry
+- `huggingface` - Deploy to Hugging Face Spaces
+- `railway` - Deploy to Railway
+- `fly` - Deploy to Fly.io
+
+### Required Secrets
+
+Set these in **Settings** → **Secrets and variables** → **Actions**:
+
+| Secret | Required For | Description |
+|--------|--------------|-------------|
+| `HF_TOKEN` | Hugging Face | Your HF access token |
+| `HF_SPACE_NAME` | Hugging Face | Space name (e.g., `username/space-name`) |
+| `RAILWAY_TOKEN` | Railway | Railway API token |
+| `RAILWAY_SERVICE` | Railway | Railway service ID |
+| `FLY_API_TOKEN` | Fly.io | Fly.io API token |
+
+### Using the Docker Image
+
+After the deploy workflow runs, pull the image:
+
+```bash
+docker pull ghcr.io/YOUR_USERNAME/interactive-research-proposal:latest
+docker run -p 8501:8501 ghcr.io/YOUR_USERNAME/interactive-research-proposal:latest
+```
+
+---
 
 ## Quick Start (Local)
 
@@ -104,10 +160,17 @@ No environment variables are required for basic functionality.
 │   ├── gaussian_processes.py
 │   ├── gp_force_fields.py
 │   └── gdml_method.py
-├── requirements_streamlit.txt # Python dependencies
+├── .github/
+│   └── workflows/
+│       ├── ci.yml            # CI workflow (lint, test, build)
+│       └── deploy.yml        # Deployment workflow
 ├── .streamlit/
 │   └── config.toml           # Streamlit configuration
+├── requirements_streamlit.txt # Python dependencies
 ├── Dockerfile                # Docker configuration
+├── Procfile                  # Heroku/Railway process file
+├── fly.toml                  # Fly.io configuration
+├── runtime.txt               # Python version specification
 └── Images/                   # Static images
 ```
 
